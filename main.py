@@ -1,4 +1,3 @@
-
 import pandas as pd
 import numpy as np
 from pandas.api.types import is_numeric_dtype
@@ -24,6 +23,20 @@ class dftrain_dftest_type_mismatch(Exception):
         else:
             return 'The by variable types between df_train and df_test are mismatches'
         
+#create a exception class
+class not_enough_colors_provided(Exception):
+    
+    def __init__(self,*args):
+        if args:
+            self._0 = args[0]
+            self._1 = args[1]
+        else:
+            self.message = None
+    
+    def __str__(self):
+
+        return 'The number of colors provided are %s, while the number of unique values in the columns are %s'%(self._0,self._1)        
+        
 
 class performanceReport():
     
@@ -36,22 +49,78 @@ class performanceReport():
         
         #if one of the two dataframes is empty, create a variable that indicates that there is only one dataframe for the class instance
         if not isinstance(df_test, pd.DataFrame):
-            self.one_df = 1
+            self.one_df = True
             self.df = df_train
         elif not isinstance(df_train, pd.DataFrame):
-            self.one_df = 1
+            self.one_df = True
             self.df = df_test
         else:
-            self.one_df = 0
+            self.one_df = False
             
         #create residuals
-        if self.one_df == 1:
+        if self.one_df:
             self.df['RESID'] = self.df[self.actual_col_name] - self.df[self.pred_col_name]
         else:
             self.df_test['RESID'] = self.df_test[self.actual_col_name] - self.df_test[self.pred_col_name]
             self.df_train['RESID'] = self.df_train[self.actual_col_name] - self.df_train[self.pred_col_name]
+   
+    #Method to apply temporary filters to datasets     
+    def filterData(self,filters):
         
-       
+        if not self.one_df:
+        
+            for i in filters:
+                if i[1] == 'lt':
+                    df_train_temp = self.df_train[self.df_train[i[0]]<i[2]]
+                    df_test_temp = self.df_test[self.df_test[i[0]]<i[2]]
+                                                
+                elif i[1] == 'lte':
+                    df_train_temp = self.df_train[self.df_train[i[0]]<=i[2]]
+                    df_test_temp = self.df_test[self.df_test[i[0]]<=i[2]]                    
+                    
+                elif i[1] == 'gt':
+                    df_train_temp = self.df_train[self.df_train[i[0]]>i[2]]
+                    df_test_temp = self.df_test[self.df_test[i[0]]>i[2]]                    
+                    
+                elif i[1] == 'gte':
+                    df_train_temp = self.df_train[self.df_train[i[0]]>=i[2]]
+                    df_test_temp = self.df_test[self.df_test[i[0]]>=i[2]]                    
+                    
+                elif i[1] == 'e':
+                    df_train_temp = self.df_train[self.df_train[i[0]]==i[2]]
+                    df_test_temp = self.df_test[self.df_test[i[0]]==i[2]]
+                    
+                elif i[1] == 'ne':
+                    df_train_temp = self.df_train[self.df_train[i[0]]!=i[2]]
+                    df_test_temp = self.df_test[self.df_test[i[0]]!=i[2]]
+                    
+            return df_train_temp, df_test_temp
+        
+        else:
+            
+            for i in filters:
+                if i[1] == 'lt':
+                    df_temp = self.df[self.df[i[0]]<i[2]]
+                                                
+                elif i[1] == 'lte':
+                    df_temp = self.df[self.df[i[0]]<=i[2]]              
+                    
+                elif i[1] == 'gt':
+                    df_temp = self.df[self.df[i[0]]>i[2]]                   
+                    
+                elif i[1] == 'gte':
+                    df_temp = self.df[self.df[i[0]]>=i[2]]                   
+                    
+                elif i[1] == 'e':
+                    df_temp = self.df[self.df[i[0]]==i[2]]
+                    
+                elif i[1] == 'ne':
+                    df_temp = self.df[self.df[i[0]]!=i[2]]
+                
+            return df_temp
+            
+        
+        
    
    
     def perfChart(self,metric_function,metric_name,chart_title,by='Empty',filters=[],bins=5,barwidth=0,barWidth=0.25,trainColor='#7f6d5f',testColor='#557f2d',figsize=[30,8],
@@ -59,7 +128,7 @@ class performanceReport():
         
         
         #first, condition on if there are two datasets
-        if self.one_df == 0:
+        if not self.one_df:
             
             #the filters variable must be a list of list. Each sublist must have the following three elements
             #1, the name of the column to be filtered
@@ -67,30 +136,9 @@ class performanceReport():
             #3, the value to filter by
             #for example filters = [['col1_name','lte','6'],[col2_name','e','VALUE1']]
             if len(filters)!=0:
-                for i in filters:
-                    if i[1] == 'lt':
-                        df_train_temp = self.df_train[self.df_train[i[0]]<i[2]]
-                        df_test_temp = self.df_test[self.df_test[i[0]]<i[2]]
-                                                    
-                    elif i[1] == 'lte':
-                        df_train_temp = self.df_train[self.df_train[i[0]]<=i[2]]
-                        df_test_temp = self.df_test[self.df_test[i[0]]<=i[2]]                    
-                        
-                    elif i[1] == 'gt':
-                        df_train_temp = self.df_train[self.df_train[i[0]]>i[2]]
-                        df_test_temp = self.df_test[self.df_test[i[0]]>i[2]]                    
-                        
-                    elif i[1] == 'gte':
-                        df_train_temp = self.df_train[self.df_train[i[0]]>=i[2]]
-                        df_test_temp = self.df_test[self.df_test[i[0]]>=i[2]]                    
-                        
-                    elif i[1] == 'e':
-                        df_train_temp = self.df_train[self.df_train[i[0]]==i[2]]
-                        df_test_temp = self.df_test[self.df_test[i[0]]==i[2]]
-                        
-                    elif i[1] == 'ne':
-                        df_train_temp = self.df_train[self.df_train[i[0]]!=i[2]]
-                        df_test_temp = self.df_test[self.df_test[i[0]]!=i[2]]
+                
+                df_train_temp, df_test_temp = self.filterData(filters)
+                
             else:
                 df_train_temp = self.df_train
                 df_test_temp = self.df_test
@@ -200,7 +248,6 @@ class performanceReport():
             plt.show()
             
         else:
-            print('There is only one dataframe provided - I need to make the code to handle this')
             
             #the filters variable must be a list of list. Each sublist must have the following three elements
             #1, the name of the column to be filtered
@@ -208,24 +255,8 @@ class performanceReport():
             #3, the value to filter by
             #for example filters = [['col1_name','lte','6'],[col2_name','e','VALUE1']]
             if len(filters)!=0:
-                for i in filters:
-                    if i[1] == 'lt':
-                        df_temp = self.df[self.df[i[0]]<i[2]]
-                                                    
-                    elif i[1] == 'lte':
-                        df_temp = self.df[self.df[i[0]]<=i[2]]              
-                        
-                    elif i[1] == 'gt':
-                        df_temp = self.df[self.df[i[0]]>i[2]]                   
-                        
-                    elif i[1] == 'gte':
-                        df_temp = self.df[self.df[i[0]]>=i[2]]                   
-                        
-                    elif i[1] == 'e':
-                        df_temp = self.df[self.df[i[0]]==i[2]]
-                        
-                    elif i[1] == 'ne':
-                        df_temp = self.df[self.df[i[0]]!=i[2]]
+                
+                df_temp = self.filterData(filters)
 
             else:
                 df_temp = self.df
@@ -260,6 +291,7 @@ class performanceReport():
                 
                 
             else:
+                
                 raise dftrain_dftest_type_mismatch
             
             
@@ -309,7 +341,110 @@ class performanceReport():
             
             plt.savefig(fig_path)      
             
-            plt.show()            
+            plt.show()     
+            
+            
+    def residChart(self,by,chart_title,aggregation='None',font_size=25,figsize=[30,8],
+                   boxplot=False,train=False,colorby='None',font_weight='bold',
+                   bins=0,filters=[],colorbycolors=[],fig_path='fig1'):
+        
+        
+        #assign a dataset as the to temp_df variable based on user input and the number of datasets provided
+        #at class initiation
+        if len(filters) != 0 and not self.one_df:
+            df_train_temp, df_test_temp = self.filterData(filters)
+            
+            if train:
+                temp_df = df_train_temp
+            else:
+                temp_df = df_test_temp
+            
+        elif len(filters) != 0 and self.one_df:
+            temp_df = self.filterData(filters)
+        
+        elif len(filters) == 0 and self.one_df:
+            temp_df = self.df
+            
+        elif len(filters) == 0 and not self.one_df:
+            
+            if train:
+                temp_df = self.df_train
+            else:
+                temp_df = self.df_test
+
+
+            
+        if aggregation == 'None':
+            
+            if colorby != 'None':
+                unique_vals = temp_df[colorby].unique()
+                #raise error if not enough colors are provided
+                if len(colorbycolors) != len(unique_vals) and len(colorbycolors) > 0:
+                    raise not_enough_colors_provided(len(colorbycolors),len(unique_vals))
+                
+                color_index = 0
+                
+                for value in unique_vals:
+                    temp_df2 = temp_df[temp_df[colorby]==value]
+                    
+                    if len(colorbycolors) == 0:
+                        #color by user input list
+                        plt.scatter(temp_df2[by],temp_df2['RESID'],
+                                    fontsize=font_size,color=colorbycolors[color_index])
+                        color_index += 1
+                    else:
+                        #allow default colors 
+                        plt.scatter(temp_df2[by],temp_df2['RESID'],fontsize=font_size)
+            else:
+                unique_vals = temp_df[by].unique()
+                
+                for value in unique_vals:
+                    
+                    temp_df2 = temp_df[temp_df[by]==value]
+                    
+                    plt.scatter(temp_df2[by],temp_df2['RESID'])
+                
+                        
+        elif aggregation == 'mean':
+            df_grouped = temp_df[[by,'RESID']].groupby(by=[by]).mean()
+            
+            #reset index to be a single index instead of double
+            df_grouped.reset_index(0).reset_index(drop=True)
+            df_grouped = df_grouped.reset_index()
+            
+            plt.scatter(df_grouped[by],df_grouped['PRED'])
+            
+        elif aggregation == 'median':
+            df_grouped = temp_df[[by,'RESID']].groupby(by=[by]).median()
+            
+            #reset index to be a single index instead of double
+            df_grouped.reset_index(0).reset_index(drop=True)
+            df_grouped = df_grouped.reset_index()
+            
+            plt.scatter(df_grouped[by],df_grouped['PRED'])
+            
+        #show chart
+        plt.xlabel(by,fontweight=font_weight,fontsize=font_size)
+        plt.ylabel('Residuals',fontweight=font_weight,fontsize=font_size)
+        
+        plt.rcParams["figure.figsize"] = (figsize[0],figsize[1])
+        
+        plt.xticks(rotation=45,ha='right',fontsize=20)
+        plt.yticks(fontsize=20)
+        
+        plt.legend()
+        plt.savefig(fig_path)
+        plt.show()
+        
+         
+        
+        
+                            
+                    
+                    
+                
+                
+
             
 
 #create test data to run through code
@@ -331,7 +466,7 @@ test_report = performanceReport('PRED','ACTUAL',df_test= test_df,df_train=train_
 #print(test_df.head(10))
 
 test_report.perfChart(metric_function=rmse,metric_name='RMSE',chart_title='RMSE by Group1',by='GROUP_1')
-
+test_report.residChart(chart_title='RMSE by Group1',by='GROUP_3',fig_path='scatter')
    
     #def perfChart(self,metric_function,metric_name,chart_title,by='Empty',filters=[],bins=5,barwidth=0,barWidth=0.25,color1='#7f6d5f',color2='#557f2d',figsize=[30,8],
      #             x_tick_rotation=45,fig_path='fig1.png'):
