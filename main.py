@@ -162,6 +162,10 @@ class performanceReport():
                 
                 df_train_temp[temp_col_name] = pd.cut(df_train_temp[by],bin_list)
                 df_test_temp[temp_col_name] = pd.cut(df_test_temp[by],bin_list)
+                
+                unique_vals_train = df_train_temp[temp_col_name].unique()
+                unique_vals_test = df_test_temp[temp_col_name].unique()
+                unique_vals = np.union1d(unique_vals_train,unique_vals_test)
                     
        
                 
@@ -346,7 +350,8 @@ class performanceReport():
             
     def residChart(self,by,chart_title,aggregation='None',font_size=25,figsize=[30,8],
                    boxplot=False,train=False,colorby='None',font_weight='bold',
-                   bins=0,filters=[],colorbycolors=[],fig_path='fig1'):
+                   bins=0,filters=[],colorbycolors=[],fig_path='fig1',xlabel_dict={},
+                   ylabel_dict={},xticks_dict={},yticks_dict={},chart_title_dict={}):
         
         
         #assign a dataset as the to temp_df variable based on user input and the number of datasets provided
@@ -387,22 +392,26 @@ class performanceReport():
                 for value in unique_vals:
                     temp_df2 = temp_df[temp_df[colorby]==value]
                     
-                    if len(colorbycolors) == 0:
+                    if len(colorbycolors) != 0:
                         #color by user input list
                         plt.scatter(temp_df2[by],temp_df2['RESID'],
                                     fontsize=font_size,color=colorbycolors[color_index])
                         color_index += 1
                     else:
                         #allow default colors 
-                        plt.scatter(temp_df2[by],temp_df2['RESID'],fontsize=font_size)
+                        plt.scatter(temp_df2[by],temp_df2['RESID'])
             else:
-                unique_vals = temp_df[by].unique()
                 
-                for value in unique_vals:
+                if not is_numeric_dtype(temp_df[by]):
+                    unique_vals = temp_df[by].unique()
                     
-                    temp_df2 = temp_df[temp_df[by]==value]
-                    
-                    plt.scatter(temp_df2[by],temp_df2['RESID'])
+                    for value in unique_vals:
+                        
+                        temp_df2 = temp_df[temp_df[by]==value]
+                        
+                        plt.scatter(temp_df2[by],temp_df2['RESID'])
+                else:
+                    plt.scatter(temp_df[by,temp_df['RESID']])
                 
                         
         elif aggregation == 'mean':
@@ -423,29 +432,44 @@ class performanceReport():
             
             plt.scatter(df_grouped[by],df_grouped['PRED'])
             
-        #show chart
-        plt.xlabel(by,fontweight=font_weight,fontsize=font_size)
-        plt.ylabel('Residuals',fontweight=font_weight,fontsize=font_size)
+        #xlabel logic
+        if len(xlabel_dict) == 0:
+            plt.xlabel(by,fontweight=font_weight,fontsize=font_size)
+        else:
+            plt.xlabel(**xlabel_dict)
+            
+        #ylabel logic
+        if len(ylabel_dict) == 0:
+            plt.ylabel('Residuals',fontweight=font_weight,fontsize=font_size)
+        else:
+            plt.ylabel(**ylabel_dict)
+                
+        #xticks logic
+        if len(xticks_dict) == 0:
+            plt.xticks(rotation=45,ha='right',fontsize=font_size)
+        else:
+            plt.xticks(**xticks_dict)
+            
+        #yticks logic
+        if len(yticks_dict) == 0:
+            plt.yticks(fontsize=font_size)
+        else:
+            plt.yticks(**yticks_dict)
+            
+        #title logic
+        if len(chart_title_dict) == 0:
+            plt.title(chart_title,fontsize=font_size)
+        else:
+            plt.title(**chart_title_dict)
+        
         
         plt.rcParams["figure.figsize"] = (figsize[0],figsize[1])
-        
-        plt.xticks(rotation=45,ha='right',fontsize=20)
-        plt.yticks(fontsize=20)
         
         plt.legend()
         plt.savefig(fig_path)
         plt.show()
         
          
-        
-        
-                            
-                    
-                    
-                
-                
-
-            
 
 #create test data to run through code
 test_df = pd.read_csv('sample_data.csv')
@@ -465,8 +489,11 @@ test_report = performanceReport('PRED','ACTUAL',df_test= test_df,df_train=train_
 
 #print(test_df.head(10))
 
-test_report.perfChart(metric_function=rmse,metric_name='RMSE',chart_title='RMSE by Group1',by='GROUP_1')
-test_report.residChart(chart_title='RMSE by Group1',by='GROUP_3',fig_path='scatter')
+test_report.residChart(chart_title='RMSE by Group1',by='GROUP_1',
+                       fig_path='scatter',xlabel_dict={'xlabel':'Group 3','fontsize':25})
+
+#test_report.perfChart(metric_function=rmse,metric_name='RMSE',chart_title='RMSE by Group1',by='GROUP_1')
+#test_report.residChart(chart_title='RMSE by Group1',by='GROUP_3',fig_path='scatter',xlabel_dict={'xlabel':'Group 3','fontsize':50})
    
     #def perfChart(self,metric_function,metric_name,chart_title,by='Empty',filters=[],bins=5,barwidth=0,barWidth=0.25,color1='#7f6d5f',color2='#557f2d',figsize=[30,8],
      #             x_tick_rotation=45,fig_path='fig1.png'):
