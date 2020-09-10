@@ -123,8 +123,10 @@ class performanceReport():
         
    
    
-    def perfChart(self,metric_function,metric_name,chart_title,by='Empty',filters=[],bins=5,barwidth=0,barWidth=0.25,trainColor='#7f6d5f',testColor='#557f2d',figsize=[30,8],
-                  x_tick_rotation=45,fig_path='fig1.png',all_metrics=True):
+    def perfChart(self,metric_function,metric_name,chart_title=' ',by='Empty',filters=[],
+                  bins=5,barwidth=0,barWidth=0.25,trainColor='#7f6d5f',testColor='#557f2d',
+                  figsize=[30,8],x_tick_rotation=45,fig_path='fig1.png',all_metrics=True,
+                  legend_dict={},xlabel_dict={},ylabel_dict={},title_dict={},xticks_dict={}):
         
         
         #first, condition on if there are two datasets
@@ -332,26 +334,45 @@ class performanceReport():
             
             plt.bar(r1,perfs, color=trainColor, width=barWidth,edgecolor='white',label=('Train %s'%metric_name))
             
-            plt.xlabel(by, fontweight='bold')
-            #plt.xticks([r + barWidth for r in range(len(perfs))],label_list)
-            plt.ylabel(metric_name, fontweight='bold')
-            
-            plt.rcParams["figure.figsize"] = (figsize[0],figsize[1])
-            
-            plt.title(chart_title)
-            plt.xticks(rotation=x_tick_rotation,ha='right')
-            
-            plt.legend()
-            
-            plt.savefig(fig_path)      
-            
+            #xlabel logic
+            if len(xlabel_dict) == 0:
+                plt.xlabel(by,fontweight=font_weight,fontsize=font_size)
+            else:
+                plt.xlabel(**xlabel_dict)
+                
+            #ylabel logic
+            if len(ylabel_dict) == 0:
+                plt.ylabel('Residuals',fontweight=font_weight,fontsize=font_size)
+            else:
+                plt.xlabel(**ylabel_dict)
+                
+            #title logic
+            if len(title_dict) == 0:
+                plt.title()
+            else:
+                plt.title(**title_dict)
+                
+            #xticks logic
+            if len(xticks_dict) == 0:
+                plt.xticks(rotation=45,ha='right')
+            else:
+                plt.xticks(**xticks_dict)
+                
+            #legend logic
+            if len(legend_dict) == 0:
+                plt.legend(chart_title)
+            else:
+                plt.legend(**legend_dict)
+                
+            plt.rcParams["figure.figsize"] = (figsize[0],figsize[1])            
+            plt.savefig(fig_path)                  
             plt.show()     
             
             
-    def residChart(self,by,chart_title,aggregation='None',font_size=25,figsize=[30,8],
+    def residChart(self,by,chart_title=' ',aggregation='None',font_size=25,figsize=[30,8],
                    boxplot=False,train=False,colorby='None',font_weight='bold',
-                   bins=0,filters=[],colorbycolors=[],fig_path='fig1',xlabel_dict={},
-                   ylabel_dict={},xticks_dict={},yticks_dict={},chart_title_dict={}):
+                   bins=0,filters=[],colorbycolors=[],fig_path='fig1',
+                   legend_dict={},xlabel_dict={},ylabel_dict={},title_dict={},xticks_dict={}):
         
         
         #assign a dataset as the to temp_df variable based on user input and the number of datasets provided
@@ -411,7 +432,7 @@ class performanceReport():
                         
                         plt.scatter(temp_df2[by],temp_df2['RESID'])
                 else:
-                    plt.scatter(temp_df[by,temp_df['RESID']])
+                    plt.scatter(temp_df[by],temp_df['RESID'])
                 
                         
         elif aggregation == 'mean':
@@ -442,32 +463,29 @@ class performanceReport():
         if len(ylabel_dict) == 0:
             plt.ylabel('Residuals',fontweight=font_weight,fontsize=font_size)
         else:
-            plt.ylabel(**ylabel_dict)
-                
+            plt.xlabel(**ylabel_dict)
+            
+        #title logic
+        if len(title_dict) == 0:
+            plt.title(chart_title)
+        else:
+            plt.title(**title_dict)
+            
         #xticks logic
         if len(xticks_dict) == 0:
-            plt.xticks(rotation=45,ha='right',fontsize=font_size)
+            plt.xticks(rotation=45,ha='right')
         else:
             plt.xticks(**xticks_dict)
             
-        #yticks logic
-        if len(yticks_dict) == 0:
-            plt.yticks(fontsize=font_size)
+        #legend logic
+        if len(legend_dict) == 0:
+            plt.legend()
         else:
-            plt.yticks(**yticks_dict)
+            plt.legend(**legend_dict)
             
-        #title logic
-        if len(chart_title_dict) == 0:
-            plt.title(chart_title,fontsize=font_size)
-        else:
-            plt.title(**chart_title_dict)
-        
-        
-        plt.rcParams["figure.figsize"] = (figsize[0],figsize[1])
-        
-        plt.legend()
-        plt.savefig(fig_path)
-        plt.show()
+        plt.rcParams["figure.figsize"] = (figsize[0],figsize[1])            
+        plt.savefig(fig_path)                  
+        plt.show()  
         
          
 
@@ -489,11 +507,13 @@ test_report = performanceReport('PRED','ACTUAL',df_test= test_df,df_train=train_
 
 #print(test_df.head(10))
 
-test_report.residChart(chart_title='RMSE by Group1',by='GROUP_1',
-                       fig_path='scatter',xlabel_dict={'xlabel':'Group 3','fontsize':25})
+#test_report.residChart(chart_title='RMSE by Group1',by='GROUP_1',
+#                       fig_path='scatter',xlabel_dict={'xlabel':'Group 3','fontsize':25})
 
 #test_report.perfChart(metric_function=rmse,metric_name='RMSE',chart_title='RMSE by Group1',by='GROUP_1')
-#test_report.residChart(chart_title='RMSE by Group1',by='GROUP_3',fig_path='scatter',xlabel_dict={'xlabel':'Group 3','fontsize':50})
+test_report.residChart(chart_title='RMSE by Group1',by='GROUP_3',fig_path='scatter',
+                       xlabel_dict={'xlabel':'Group 3','fontsize':50},
+                       title_dict={'label':'Group 3 Residuals','fontsize':25})
    
     #def perfChart(self,metric_function,metric_name,chart_title,by='Empty',filters=[],bins=5,barwidth=0,barWidth=0.25,color1='#7f6d5f',color2='#557f2d',figsize=[30,8],
      #             x_tick_rotation=45,fig_path='fig1.png'):
