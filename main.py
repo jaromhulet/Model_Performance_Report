@@ -64,6 +64,44 @@ class performanceReport():
             self.df_test['RESID'] = self.df_test[self.actual_col_name] - self.df_test[self.pred_col_name]
             self.df_train['RESID'] = self.df_train[self.actual_col_name] - self.df_train[self.pred_col_name]
    
+    #Method for binning continuous data
+    def createBins(self,col_name,bins):
+        
+        if not self.one_df:
+            #binning logic
+            df_train_temp = self.df_train.copy()
+            df_test_temp = self.df_test.copy()
+            
+            temp_max = max(df_train_temp[col_name].max(),df_test_temp[col_name].max())
+            temp_min = min(df_train_temp[col_name].min(),df_test_temp[col_name].min())
+            step_size = (temp_max - temp_min)/(bins-1)
+        else:
+            temp_df = self.df.copy()
+            
+            temp_max = df[col_name].max()
+            temp_min = df[col_name].min()
+            step_size = (temp_max - temp_min)
+            
+        bin_list = [temp_min]
+        
+        for i in range(0,bins):
+            temp_min = temp_min + step_size
+            bin_list.append(temp_min)
+            
+        temp_col_name = col_name + '_grouped'
+        
+        
+        if not self.one_df:
+            df_train_temp[temp_col_name] = pd.cut(df_train_temp[col_name],bin_list)
+            df_test_temp[temp_col_name] = pd.cut(df_test_temp[col_name],bin_list)
+            return df_train_temp, df_test_temp, temp_col_name
+        else:
+            temp_df[temp_col_name] = pd.cut(temp_df[col_name],bin_list)
+            return dftemp_df, temp_col_name
+            
+            
+        
+    
     #Method to apply temporary filters to datasets     
     def filterData(self,filters):
         
@@ -148,25 +186,17 @@ class performanceReport():
             
             #if data is numeric cut into bins and calculate
             if is_numeric_dtype(self.df_train[by]) and is_numeric_dtype(self.df_test[by]):
+
+                #create bins                
+                df_train_temp, df_test_temp, temp_col_name = self.createBins(col_name=by,bins=bins)
                 
-                #binning logic
-                temp_max = max(df_train_temp[by].max(),df_test_temp[by].max())
-                temp_min = min(df_train_temp[by].min(),df_test_temp[by].min())
-                step_size = (temp_max - temp_min)/(bins-1)
-                
-                bin_list = [temp_min]
-                
-                for i in range(0,bins):
-                    temp_min = temp_min + step_size
-                    bin_list.append(temp_min)
-                    
-                temp_col_name = by + '_grouped'
-                
-                df_train_temp[temp_col_name] = pd.cut(df_train_temp[by],bin_list)
-                df_test_temp[temp_col_name] = pd.cut(df_test_temp[by],bin_list)
-                
+                #for now drop nulls, add them back later so that you can see errors by nulls
                 unique_vals_train = df_train_temp[temp_col_name].unique()
+                unique_vals_train = unique_vals_train.dropna()
+
                 unique_vals_test = df_test_temp[temp_col_name].unique()
+                unique_vals_test = unique_vals_test.dropna()
+                
                 unique_vals = np.union1d(unique_vals_train,unique_vals_test)
                     
        
@@ -271,20 +301,9 @@ class performanceReport():
             #if data is numeric cut into bins and calculate
             if is_numeric_dtype(self.df[by]):
                 
-                #binning logic
-                temp_max = df_temp[by].max()
-                temp_min =df_temp[by].min()
-                step_size = (temp_max - temp_min)/(bins-1)
-                
-                bin_list = [temp_min]
-                
-                for i in range(0,bins):
-                    temp_min = temp_min + step_size
-                    bin_list.append(temp_min)
-                    
-                temp_col_name = by + '_grouped'
-                
-                df_temp[temp_col_name] = pd.cut(df_temp[by],bin_list)
+                #create bins                
+                df_temp, new_col_name = self.createBins(col_name=by,bins=bins)
+                unique_vals = df_temp[new_col_name].unique()
                     
                 
             elif not is_numeric_dtype(self.df[by]):
@@ -487,6 +506,10 @@ class performanceReport():
         plt.savefig(fig_path)                  
         plt.show()  
         
+    
+    def boxplots(self,by,bins=5):
+        
+        
          
 
 #create test data to run through code
@@ -510,10 +533,10 @@ test_report = performanceReport('PRED','ACTUAL',df_test= test_df,df_train=train_
 #test_report.residChart(chart_title='RMSE by Group1',by='GROUP_1',
 #                       fig_path='scatter',xlabel_dict={'xlabel':'Group 3','fontsize':25})
 
-#test_report.perfChart(metric_function=rmse,metric_name='RMSE',chart_title='RMSE by Group1',by='GROUP_1')
-test_report.residChart(chart_title='RMSE by Group1',by='GROUP_3',fig_path='scatter',
-                       xlabel_dict={'xlabel':'Group 3','fontsize':50},
-                       title_dict={'label':'Group 3 Residuals','fontsize':25})
+test_report.perfChart(metric_function=rmse,metric_name='RMSE',chart_title='RMSE by Group1',by='GROUP_3')
+#test_report.residChart(chart_title='RMSE by Group1',by='GROUP_3',fig_path='scatter',
+#                       xlabel_dict={'xlabel':'Group 3','fontsize':50},
+#                       title_dict={'label':'Group 3 Residuals','fontsize':25})
    
     #def perfChart(self,metric_function,metric_name,chart_title,by='Empty',filters=[],bins=5,barwidth=0,barWidth=0.25,color1='#7f6d5f',color2='#557f2d',figsize=[30,8],
      #             x_tick_rotation=45,fig_path='fig1.png'):
