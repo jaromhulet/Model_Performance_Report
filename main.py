@@ -507,7 +507,6 @@ class performanceReport():
         plt.show()  
         
     
-    def boxplots(self,by,bins=5):
         
         
          
