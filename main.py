@@ -65,18 +65,18 @@ class performanceReport():
             self.df_train['RESID'] = self.df_train[self.actual_col_name] - self.df_train[self.pred_col_name]
    
     #Method for binning continuous data
-    def createBins(self,col_name,bins):
-        
-        if not self.one_df:
-            #binning logic
-            df_train_temp = self.df_train.copy()
-            df_test_temp = self.df_test.copy()
             
-            temp_max = max(df_train_temp[col_name].max(),df_test_temp[col_name].max())
-            temp_min = min(df_train_temp[col_name].min(),df_test_temp[col_name].min())
+    # I can't have them take straing from self.df_train, self.df_test, because that would erase filters
+    def createBins(self,col_name,df_train,df_test,df=0,bins=5,single_df=False):
+        
+        if not single_df:
+            #binning logic
+
+            
+            temp_max = max(df_train[col_name].max(),df_test[col_name].max())
+            temp_min = min(df_train[col_name].min(),df_test[col_name].min())
             step_size = (temp_max - temp_min)/(bins-1)
         else:
-            temp_df = self.df.copy()
             
             temp_max = df[col_name].max()
             temp_min = df[col_name].min()
@@ -91,13 +91,13 @@ class performanceReport():
         temp_col_name = col_name + '_grouped'
         
         
-        if not self.one_df:
-            df_train_temp[temp_col_name] = pd.cut(df_train_temp[col_name],bin_list)
-            df_test_temp[temp_col_name] = pd.cut(df_test_temp[col_name],bin_list)
-            return df_train_temp, df_test_temp, temp_col_name
+        if not single_df:
+            df_train[temp_col_name] = pd.cut(df_train[col_name],bin_list)
+            df_test[temp_col_name] = pd.cut(df_test[col_name],bin_list)
+            return df_train, df_test, temp_col_name
         else:
-            temp_df[temp_col_name] = pd.cut(temp_df[col_name],bin_list)
-            return dftemp_df, temp_col_name
+            df[temp_col_name] = pd.cut(df[col_name],bin_list)
+            return df, temp_col_name
             
             
         
@@ -188,7 +188,9 @@ class performanceReport():
             if is_numeric_dtype(self.df_train[by]) and is_numeric_dtype(self.df_test[by]):
 
                 #create bins                
-                df_train_temp, df_test_temp, temp_col_name = self.createBins(col_name=by,bins=bins)
+                df_train_temp, df_test_temp, temp_col_name = self.createBins(df_train=df_train_temp,
+                                                                             df_test=df_test_temp,
+                                                                             col_name=by,bins=bins)
                 
                 #for now drop nulls, add them back later so that you can see errors by nulls
                 unique_vals_train = df_train_temp[temp_col_name].unique()
@@ -302,7 +304,7 @@ class performanceReport():
             if is_numeric_dtype(self.df[by]):
                 
                 #create bins                
-                df_temp, new_col_name = self.createBins(col_name=by,bins=bins)
+                df_temp, new_col_name = self.createBins(df=df_temp,col_name=by,bins=bins)
                 unique_vals = df_temp[new_col_name].unique()
                     
                 
@@ -389,7 +391,7 @@ class performanceReport():
             
             
     def residChart(self,by,chart_title=' ',aggregation='None',font_size=25,figsize=[30,8],
-                   boxplot=False,train=False,colorby='None',font_weight='bold',
+                   train=False,colorby='None',font_weight='bold',
                    bins=0,filters=[],colorbycolors=[],fig_path='fig1',
                    legend_dict={},xlabel_dict={},ylabel_dict={},title_dict={},xticks_dict={}):
         
@@ -506,7 +508,43 @@ class performanceReport():
         plt.savefig(fig_path)                  
         plt.show()  
         
-    
+    def boxplots(self,by,chart_title=' ',font_size=25,figsize=[30,8],train=False,
+                   font_weight='bold',bins=5,filters=[],fig_path='fig1',
+                   legend_dict={},xlabel_dict={},ylabel_dict={},title_dict={},xticks_dict={}):
+        
+        #apply filters
+        if len(filters) != 0 and not self.one_df:
+            df_train_temp, df_test_temp = self.filterData(filters)
+            
+            if train:
+                temp_df = df_train_temp
+            else:
+                temp_df = df_test_temp
+            
+        elif len(filters) != 0 and self.one_df:
+            temp_df = self.filterData(filters)
+        
+        elif len(filters) == 0 and self.one_df:
+            temp_df = self.df
+            
+        elif len(filters) == 0 and not self.one_df:
+            
+            if train:
+                temp_df = self.df_train
+            else:
+                temp_df = self.df_test
+                
+        #test if categorical or continuous, bin if categorical
+        if is_numeric_dtype(temp_df[by]):
+            
+            temp_df, temp_col_name = self.createBins(col_name=by,df=temp_df,single_df=True)
+            
+            unique_vals = temp_df[temp_col_name].unique().dropna()
+            
+        else:
+            unique_vals = temp_df[by].unique().dropna()
+        
+        
         
         
          
