@@ -66,8 +66,8 @@ class performanceReport():
    
     #Method for binning continuous data
             
-    # I can't have them take straing from self.df_train, self.df_test, because that would erase filters
-    def createBins(self,col_name,df_train,df_test,df=0,bins=5,single_df=False):
+    # I can't have them take straight from self.df_train, self.df_test, because that would erase filters
+    def createBins(self,col_name=0,df_train=0,df_test,df=0,bins=5,single_df=False):
         
         if not single_df:
             #binning logic
@@ -106,54 +106,59 @@ class performanceReport():
     def filterData(self,filters):
         
         if not self.one_df:
+            
+            df_train_temp = self.df_train.copy()
+            df_test_temp = self.df_test.copy()
         
             for i in filters:
                 if i[1] == 'lt':
-                    df_train_temp = self.df_train[self.df_train[i[0]]<i[2]]
-                    df_test_temp = self.df_test[self.df_test[i[0]]<i[2]]
+                    df_train_temp = df_train_temp[df_train_temp[i[0]]<i[2]]
+                    df_test_temp = df_test_temp[df_test_temp[i[0]]<i[2]]
                                                 
                 elif i[1] == 'lte':
-                    df_train_temp = self.df_train[self.df_train[i[0]]<=i[2]]
-                    df_test_temp = self.df_test[self.df_test[i[0]]<=i[2]]                    
+                    df_train_temp = df_train_temp[df_train_temp[i[0]]<=i[2]]
+                    df_test_temp = df_test_temp[df_test_temp[i[0]]<=i[2]]                    
                     
                 elif i[1] == 'gt':
-                    df_train_temp = self.df_train[self.df_train[i[0]]>i[2]]
-                    df_test_temp = self.df_test[self.df_test[i[0]]>i[2]]                    
+                    df_train_temp = df_train_temp[df_train_temp[i[0]]>i[2]]
+                    df_test_temp = df_test_temp[df_test_temp[i[0]]>i[2]]                    
                     
                 elif i[1] == 'gte':
-                    df_train_temp = self.df_train[self.df_train[i[0]]>=i[2]]
-                    df_test_temp = self.df_test[self.df_test[i[0]]>=i[2]]                    
+                    df_train_temp = df_train_temp[df_train_temp[i[0]]>=i[2]]
+                    df_test_temp = df_test_temp[df_test_temp[i[0]]>=i[2]]                    
                     
                 elif i[1] == 'e':
-                    df_train_temp = self.df_train[self.df_train[i[0]]==i[2]]
-                    df_test_temp = self.df_test[self.df_test[i[0]]==i[2]]
+                    df_train_temp = df_train_temp[df_train_temp[i[0]]==i[2]]
+                    df_test_temp = df_test_temp[df_test_temp[i[0]]==i[2]]
                     
                 elif i[1] == 'ne':
-                    df_train_temp = self.df_train[self.df_train[i[0]]!=i[2]]
-                    df_test_temp = self.df_test[self.df_test[i[0]]!=i[2]]
+                    df_train_temp = df_train_temp[df_train_temp[i[0]]!=i[2]]
+                    df_test_temp = df_test_temp[df_test_temp[i[0]]!=i[2]]
                     
             return df_train_temp, df_test_temp
         
         else:
             
+            df_temp = self.df.copy()
+            
             for i in filters:
                 if i[1] == 'lt':
-                    df_temp = self.df[self.df[i[0]]<i[2]]
+                    df_temp = df_temp[df_temp[i[0]]<i[2]]
                                                 
                 elif i[1] == 'lte':
-                    df_temp = self.df[self.df[i[0]]<=i[2]]              
+                    df_temp = df_temp[df_temp[i[0]]<=i[2]]              
                     
                 elif i[1] == 'gt':
-                    df_temp = self.df[self.df[i[0]]>i[2]]                   
+                    df_temp = df_temp[df_temp[i[0]]>i[2]]                   
                     
                 elif i[1] == 'gte':
-                    df_temp = self.df[self.df[i[0]]>=i[2]]                   
+                    df_temp = df_temp[df_temp[i[0]]>=i[2]]                   
                     
                 elif i[1] == 'e':
-                    df_temp = self.df[self.df[i[0]]==i[2]]
+                    df_temp = df_temp[df_temp[i[0]]==i[2]]
                     
                 elif i[1] == 'ne':
-                    df_temp = self.df[self.df[i[0]]!=i[2]]
+                    df_temp = df_temp[df_temp[i[0]]!=i[2]]
                 
             return df_temp
             
@@ -390,7 +395,7 @@ class performanceReport():
             plt.show()     
             
             
-    def residChart(self,by,chart_title=' ',aggregation='None',font_size=25,figsize=[30,8],
+    def residChart(self,by,sample=0,chart_title=' ',aggregation='None',font_size=25,figsize=[30,8],
                    train=False,colorby='None',font_weight='bold',
                    bins=0,filters=[],colorbycolors=[],fig_path='fig1',
                    legend_dict={},xlabel_dict={},ylabel_dict={},title_dict={},xticks_dict={}):
@@ -418,6 +423,10 @@ class performanceReport():
                 temp_df = self.df_train
             else:
                 temp_df = self.df_test
+                
+        #take random sample of data if sample > 0
+        if sample > 0:
+            temp_df = temp_df.sample(n=sample)
 
 
             
@@ -545,6 +554,12 @@ class performanceReport():
             unique_vals = temp_df[by].unique().dropna()
         
         
+        for value in unique_vals:
+            
+            plt.boxplot(temp_df[value])
+        
+        plt.show()
+        
         
         
          
@@ -570,7 +585,8 @@ test_report = performanceReport('PRED','ACTUAL',df_test= test_df,df_train=train_
 #test_report.residChart(chart_title='RMSE by Group1',by='GROUP_1',
 #                       fig_path='scatter',xlabel_dict={'xlabel':'Group 3','fontsize':25})
 
-test_report.perfChart(metric_function=rmse,metric_name='RMSE',chart_title='RMSE by Group1',by='GROUP_3')
+#test_report.perfChart(metric_function=rmse,metric_name='RMSE',chart_title='RMSE by Group1',by='GROUP_3')
+test_report.boxplots(chart_title='RMSE by Group1',by='GROUP_3')
 #test_report.residChart(chart_title='RMSE by Group1',by='GROUP_3',fig_path='scatter',
 #                       xlabel_dict={'xlabel':'Group 3','fontsize':50},
 #                       title_dict={'label':'Group 3 Residuals','fontsize':25})
