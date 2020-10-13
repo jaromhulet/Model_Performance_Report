@@ -104,56 +104,64 @@ class performanceReport():
     
     #Method to apply temporary filters to datasets     
     def filterData(self,filters):
+
+        #right now filters' list elements can only function as AND filters e.g. A > 1 AND B == 2.  
+        #Consider adding some kind of OR functionality in the future A > 1 OR B ==2 is currently not possible
         
         if not self.one_df:
+            
+            df_train_temp = self.df_train.copy()
+            df_test_temp = self.df_test.copy()
         
             for i in filters:
                 if i[1] == 'lt':
-                    df_train_temp = self.df_train[self.df_train[i[0]]<i[2]]
-                    df_test_temp = self.df_test[self.df_test[i[0]]<i[2]]
+                    df_train_temp = df_train_temp[df_train_temp[i[0]]<i[2]]
+                    df_test_temp = df_test_temp[df_test_temp[i[0]]<i[2]]
                                                 
                 elif i[1] == 'lte':
-                    df_train_temp = self.df_train[self.df_train[i[0]]<=i[2]]
-                    df_test_temp = self.df_test[self.df_test[i[0]]<=i[2]]                    
+                    df_train_temp = df_train_temp[df_train_temp[i[0]]<=i[2]]
+                    df_test_temp = df_test_temp[df_test_temp[i[0]]<=i[2]]                    
                     
                 elif i[1] == 'gt':
                     df_train_temp = self.df_train[self.df_train[i[0]]>i[2]]
-                    df_test_temp = self.df_test[self.df_test[i[0]]>i[2]]                    
+                    df_test_temp = df_test_temp[df_test_temp[i[0]]>i[2]]                    
                     
                 elif i[1] == 'gte':
-                    df_train_temp = self.df_train[self.df_train[i[0]]>=i[2]]
+                    df_train_temp = df_train_temp[df_train_temp[i[0]]>=i[2]]
                     df_test_temp = self.df_test[self.df_test[i[0]]>=i[2]]                    
                     
                 elif i[1] == 'e':
-                    df_train_temp = self.df_train[self.df_train[i[0]]==i[2]]
-                    df_test_temp = self.df_test[self.df_test[i[0]]==i[2]]
+                    df_train_temp = df_train_temp[df_train_temp[i[0]]==i[2]]
+                    df_test_temp = df_test_temp[df_test_temp[i[0]]==i[2]]
                     
                 elif i[1] == 'ne':
-                    df_train_temp = self.df_train[self.df_train[i[0]]!=i[2]]
-                    df_test_temp = self.df_test[self.df_test[i[0]]!=i[2]]
+                    df_train_temp = df_train_temp[df_train_temp[i[0]]!=i[2]]
+                    df_test_temp = df_test_temp[df_test_temp[i[0]]!=i[2]]
                     
             return df_train_temp, df_test_temp
         
         else:
             
+            df_temp = self.df.copy()
+            
             for i in filters:
                 if i[1] == 'lt':
-                    df_temp = self.df[self.df[i[0]]<i[2]]
+                    df_temp = df_temp[df_temp[i[0]]<i[2]]
                                                 
                 elif i[1] == 'lte':
-                    df_temp = self.df[self.df[i[0]]<=i[2]]              
+                    df_temp = df_temp[df_temp[i[0]]<=i[2]]              
                     
                 elif i[1] == 'gt':
-                    df_temp = self.df[self.df[i[0]]>i[2]]                   
+                    df_temp = df_temp[df_temp[i[0]]>i[2]]                   
                     
                 elif i[1] == 'gte':
-                    df_temp = self.df[self.df[i[0]]>=i[2]]                   
+                    df_temp = df_temp[df_temp[i[0]]>=i[2]]                   
                     
                 elif i[1] == 'e':
-                    df_temp = self.df[self.df[i[0]]==i[2]]
+                    df_temp = df_temp[df_temp[i[0]]==i[2]]
                     
                 elif i[1] == 'ne':
-                    df_temp = self.df[self.df[i[0]]!=i[2]]
+                    df_temp = df_temp[df_temp[i[0]]!=i[2]]
                 
             return df_temp
             
@@ -163,8 +171,8 @@ class performanceReport():
    
     def perfChart(self,metric_function,metric_name,chart_title=' ',by='Empty',filters=[],
                   bins=5,barwidth=0,barWidth=0.25,trainColor='#7f6d5f',testColor='#557f2d',
-                  figsize=[30,8],x_tick_rotation=45,fig_path='fig1.png',all_metrics=True,
-                  legend_dict={},xlabel_dict={},ylabel_dict={},title_dict={},xticks_dict={}):
+                  figsize=[30,8],x_tick_rotation=45,fig_path='fig1.png',all_metrics=True,font_weight='bold',font_size=25,
+                  legend_dict={},xlabel_dict={},ylabel_dict={},title_dict={},xticks_dict={},table='N'):
         
         
         #first, condition on if there are two datasets
@@ -257,7 +265,10 @@ class performanceReport():
                 
                 label_list.append(j)
                 
-            
+            #if user wants table, print out a dataframe of performance
+            if table != 'N': 
+                temp_dict = {'CUT_NAME': label_list, 'TRAIN_PERF': train_perf, 'TEST_PERF': test_perf}  
+                print(pd.DataFrame(temp_dict))
             
             #set position of bar on X-axis    
             r1 = np.arange(len(label_list))
@@ -267,21 +278,48 @@ class performanceReport():
             plt.bar(r1,train_perf, color=trainColor, width=barWidth,edgecolor='white',label=('Train %s'%metric_name))
             plt.bar(r2,test_perf, color=testColor, width=barWidth,edgecolor='white',label=('Test %s'%metric_name))
             
-            plt.xlabel(by, fontweight='bold')
-            #plt.xticks([r + barWidth for r in range(len(test_perf))],label_list)
             plt.xticks([r + barWidth for r in range(len(test_perf))],label_list)
-            plt.ylabel(metric_name, fontweight='bold')
-            
-            plt.rcParams["figure.figsize"] = (figsize[0],figsize[1])
             
             plt.title(chart_title)
-            plt.xticks(rotation=x_tick_rotation,ha='right')
             
-            plt.legend()
+            #xlabel logic
+            if len(xlabel_dict) == 0:
+                plt.xlabel(by,fontweight=font_weight,fontsize=font_size)
+            else:
+                plt.xlabel(**xlabel_dict)
+
+            #ylabel logic
+            if len(ylabel_dict) == 0:
+                plt.ylabel(metric_name,fontweight=font_weight,fontsize=font_size)
+            else:
+                plt.ylabel(**ylabel_dict)
+
+            #title logic
+            if len(title_dict) == 0:
+                plt.title(chart_title)
+            else:
+                plt.title(**title_dict)
+
+            #xticks logic
+            if len(xticks_dict) == 0:
+                plt.xticks(rotation=45,ha='right')
+            else:
+                plt.xticks(**xticks_dict)
+
+            #legend logic
+            if len(legend_dict) == 0:
+                plt.legend()
+            else:
+                plt.legend(**legend_dict)
+
+            plt.rcParams["figure.figsize"] = (figsize[0],figsize[1])            
+            plt.savefig(fig_path)                  
+            plt.show()                 
             
             plt.savefig(fig_path)      
             
             plt.show()
+            
             
         else:
             
@@ -346,43 +384,46 @@ class performanceReport():
                 perfs.append(temp_perf)
                 label_list.append(j)
                 
+            if table != 'N': 
+                temp_dict = {'CUT_NAME': label_list, 'PERF': perfs}  
+                print(pd.DataFrame(temp_dict))
             
             #set position of bar on X-axis    
             r1 = np.arange(len(label_list))
             r2 = [x + barWidth for x in r1]
-            
+
             plt.bar(r1,perfs, color=trainColor, width=barWidth,edgecolor='white',label=('Train %s'%metric_name))
-            
+
             #xlabel logic
             if len(xlabel_dict) == 0:
                 plt.xlabel(by,fontweight=font_weight,fontsize=font_size)
             else:
                 plt.xlabel(**xlabel_dict)
-                
+
             #ylabel logic
             if len(ylabel_dict) == 0:
                 plt.ylabel('Residuals',fontweight=font_weight,fontsize=font_size)
             else:
-                plt.xlabel(**ylabel_dict)
-                
+                plt.ylabel(**ylabel_dict)
+
             #title logic
             if len(title_dict) == 0:
-                plt.title()
+                plt.title(chart_title)
             else:
                 plt.title(**title_dict)
-                
+
             #xticks logic
             if len(xticks_dict) == 0:
                 plt.xticks(rotation=45,ha='right')
             else:
                 plt.xticks(**xticks_dict)
-                
+
             #legend logic
             if len(legend_dict) == 0:
                 plt.legend(chart_title)
             else:
                 plt.legend(**legend_dict)
-                
+
             plt.rcParams["figure.figsize"] = (figsize[0],figsize[1])            
             plt.savefig(fig_path)                  
             plt.show()     
@@ -391,7 +432,7 @@ class performanceReport():
     def residChart(self,by,chart_title=' ',aggregation='None',font_size=25,figsize=[30,8],
                    boxplot=False,train=False,colorby='None',font_weight='bold',
                    bins=0,filters=[],colorbycolors=[],fig_path='fig1',
-                   legend_dict={},xlabel_dict={},ylabel_dict={},title_dict={},xticks_dict={}):
+                   legend_dict={},xlabel_dict={},ylabel_dict={},title_dict={},xticks_dict={},sample_size=0):
         
         
         #assign a dataset as the to temp_df variable based on user input and the number of datasets provided
@@ -417,6 +458,9 @@ class performanceReport():
             else:
                 temp_df = self.df_test
 
+        #create a sample if it is provided by user
+        if sample_size != 0:
+            temp_df = temp_df.sample(sample_size)
 
             
         if aggregation == 'None':
@@ -433,12 +477,15 @@ class performanceReport():
                     temp_df2 = temp_df[temp_df[colorby]==value]
                     
                     if len(colorbycolors) != 0:
+                        
+                        
                         #color by user input list
                         plt.scatter(temp_df2[by],temp_df2['RESID'],
                                     fontsize=font_size,color=colorbycolors[color_index])
                         color_index += 1
                     else:
                         #allow default colors 
+                        
                         plt.scatter(temp_df2[by],temp_df2['RESID'])
             else:
                 
@@ -503,47 +550,16 @@ class performanceReport():
             plt.legend(**legend_dict)
             
         plt.rcParams["figure.figsize"] = (figsize[0],figsize[1])            
-        plt.savefig(fig_path)                  
+        plt.savefig(fig_path)
+        
+        if colorby != 'None':
+            plt.legend(colorby)
+        
         plt.show()  
-        
-    
-        
-        
-         
-
-#create test data to run through code
-test_df = pd.read_csv('sample_data.csv')
-train_df = pd.read_csv('sample_data.csv')
-df = pd.read_csv('sample_data.csv')
-
-test_df['PRED'] = test_df['PRED'].astype(float)
-test_df['ACTUAL'] = test_df['ACTUAL'].astype(float)
-train_df['PRED']=train_df['PRED'].astype(float)
-train_df['ACTUAL'] = train_df['ACTUAL'].astype(float)
 
 def rmse(y,yhat):
     return math.sqrt(mean_squared_error(y,yhat))
 
-
-test_report = performanceReport('PRED','ACTUAL',df_test= test_df,df_train=train_df)     
-
-#print(test_df.head(10))
-
-#test_report.residChart(chart_title='RMSE by Group1',by='GROUP_1',
-#                       fig_path='scatter',xlabel_dict={'xlabel':'Group 3','fontsize':25})
-
-test_report.perfChart(metric_function=rmse,metric_name='RMSE',chart_title='RMSE by Group1',by='GROUP_3')
-#test_report.residChart(chart_title='RMSE by Group1',by='GROUP_3',fig_path='scatter',
-#                       xlabel_dict={'xlabel':'Group 3','fontsize':50},
-#                       title_dict={'label':'Group 3 Residuals','fontsize':25})
-   
-    #def perfChart(self,metric_function,metric_name,chart_title,by='Empty',filters=[],bins=5,barwidth=0,barWidth=0.25,color1='#7f6d5f',color2='#557f2d',figsize=[30,8],
-     #             x_tick_rotation=45,fig_path='fig1.png'):
-            
-            
-        
-        
-        
-
-
-
+def mape(actual, pred): 
+    actual, pred = np.array(actual), np.array(pred)
+    return np.mean(np.abs((actual - pred) / actual)) * 100
